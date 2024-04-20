@@ -1,16 +1,13 @@
-function LLRs = demap8PSK_Rmatrix(y, sigma)
-    % Преобразование входного сигнала в действительную и мнимую части
-    Y_I = real(y);
-    Y_Q = imag(y);
+function LLRs = demap8PSK_Rmatrix(yI, yQ, sigma2)
+    % вычисляем фазовый угол принятого символа
+    phaseAngle = atan2(yQ, yI);  
 
-    % Инициализация массива для LLR
-    LLRs = zeros(length(y), 3);  % Предполагается три бита на символ
+    % определяем область на основе фазового угла
+    region = determineRegion(phaseAngle);  
 
-    for i = 1:length(y)
-        % Получение соответствующей R-матрицы
-        R = getRMatrix(determineRegion(angle(y(i))));  
+    % получаем R-матрицу для определенной области
+    R = getRMatrix(region);  
 
-        % Умножение R-матрицы на вектор [Y_I(i); Y_Q(i)]
-        LLRs(i, :) = (1/sigma^2) * R' * [Y_I(i); Y_Q(i)];  % Убедитесь, что умножение происходит в правильном порядке
-    end
+    % вычисляем LLR для каждого бита
+    LLRs = [yI, yQ] * (1/sigma2) * R;
 end
