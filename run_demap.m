@@ -1,11 +1,10 @@
 %% Тест demap8PSK_Rmatrix.m
-angles = (-7:2:7) * pi/8; % от -7pi/8 до 7pi/8 с шагом pi/4
+angles = (-7:2:7) * pi/8;
 
-noise_levels = [0.1, 0.05, 0.2]; % очень низкий (близкий к нулю), низкий шум, высокий шум
+noise_levels = [1e-12, 0.05, 0.2];
 
-% перебор уровней шума
 for sigma2 = noise_levels
-    fprintf('Тест при уровне шума sigma2 = %f\n', sigma2);
+    fprintf('Тест при sigma2 = %f\n', sigma2);
     for i = 1:length(angles)
         % идеальные координаты точки
         yI = cos(angles(i));
@@ -33,7 +32,6 @@ for i = 1:length(angles)
     yI = cos(angles(i));
     yQ = sin(angles(i));
     
-    % вызываем функцию demap8PSK_Rmatrix
     LLRs = demap8PSK_Rmatrix(yI, yQ, sigma2);
 
     fprintf('Тестовый угол: %5.2f, LLR: [%6.2f, %6.2f, %6.2f]\n', angles(i), LLRs);
