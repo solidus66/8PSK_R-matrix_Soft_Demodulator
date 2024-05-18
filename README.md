@@ -2,9 +2,15 @@
 
 #### Файлы данного репозитория:
 
-* [**demap8PSK_Rmatrix.m**](demap8PSK_Rmatrix.m) - функция для вычисления LLR с использованием R-матриц
-* [**determineRegion.m**](determineRegion.m) - функция для определения области фазового угла сигнала
+##### Основные файлы:
+
 * [**getRMatrix.m**](getRMatrix.m) - функция для расчёта R-матриц
+* [**determineRegion.m**](determineRegion.m) - функция для определения области фазового угла сигнала
+* [**demap8PSK_Rmatrix.m**](demap8PSK_Rmatrix.m) - функция для вычисления LLR с использованием R-матриц (демодулятор)
+* [**comm_app.m**](comm_app.m) - измененный comm.APPDecoder из MatLab (добавлено использование собственного демодулятора)
+
+##### Вспомогательные файлы для проведения тестов:
+
 * [**printRMatrixValues.m**](printRMatrixValues.m) - файл для проверки работоспособности функции getRMatrix.m
 * [**run_demap.m**](run_demap.m) - файл с набором тестов для файлов, представленных выше
 
