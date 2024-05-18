@@ -54,3 +54,27 @@ for i = 1:length(test_angles)
             test_angles(i), expected_regions(i), calculated_region);
 end
 fprintf('__________\n')
+%% Новый тест нового demap8PSK_Rmatrix
+% Параметры
+sigma2 = 0.2; % дисперсия шума
+numSymbols = 1; % количество тестовых символов
+
+% Генерация случайных комплексных символов 8PSK
+angles = linspace(0, 2*pi, 8); % углы фаз для 8PSK
+symbols = exp(1j * angles); % генерация 8PSK символов
+testSymbols = symbols(randi([1, 8], numSymbols, 1)); % случайные символы из набора 8PSK
+
+% Добавление шума к символам
+noise = sqrt(sigma2/2) * (randn(numSymbols, 1) + 1j * randn(numSymbols, 1));
+receivedSignal = testSymbols + noise;
+
+% Вычисление LLR значений с использованием функции demap8PSK_Rmatrix
+LLRs = demap8PSK_Rmatrix(receivedSignal, sigma2);
+
+% Вывод результатов
+disp('Received Symbols:');
+disp(receivedSignal);
+
+disp('LLR values:');
+disp(LLRs);
+fprintf('__________\n')
