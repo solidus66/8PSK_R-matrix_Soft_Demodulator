@@ -11,7 +11,7 @@
 ##### Вспомогательные файлы для проведения тестов:
 
 * [**printRMatrixValues.m**](printRMatrixValues.m) - файл для проверки работоспособности функции getRMatrix.m
-* [**run_demap.m**](run_demap.m) - файл с набором тестов для файлов, представленных выше
+* [**test_file.m**](test_file.m) - файл с набором тестов для файлов, представленных выше
 
 ##### Моделирование:
 
@@ -19,6 +19,8 @@
 
 * [**comm_app.m**](comm_app.m) - измененный пример из документации [comm.APPDecoder](https://www.mathworks.com/help/comm/ref/comm.appdecoder-system-object.html) и [comm.PSKDemodulator](https://www.mathworks.com/help/comm/ref/comm.pskdemodulator-system-object.html) из MatLab (добавлено использование собственного демодулятора)
 * [**comm_app_01.m**](comm_app_01.m) - измененный пример из документации [comm.APPDecoder](https://www.mathworks.com/help/comm/ref/comm.appdecoder-system-object.html) и [comm.PSKDemodulator](https://www.mathworks.com/help/comm/ref/comm.pskdemodulator-system-object.html) из MatLab, в данный файл добавлены также вышеперечисленные функции из *основных файлов*, чтобы он мог работать самостоятельно
+
+Файлы [**comm_app.m**](comm_app.m) и [**comm_app_01.m**](comm_app_01.m) (в будующем будут переименованы) представляют собой
 
 #### Немного теории:
 
