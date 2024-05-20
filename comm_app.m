@@ -1,41 +1,59 @@
-% Параметры
-noiseVar = 2e-1;
+clear;
+% Parameters
+%noiseVar = 2e-1;
+noiseVar = (0.025:0.025:0.5);
 frameLength = 300;
 
-% Создание объектов
-convEncoder = comm.ConvolutionalEncoder('TerminationMethod','Truncated');
+% Create objects
+convEncoder = comm.ConvolutionalEncoder('TrellisStructure',poly2trellis(7,[171 133]),'TerminationMethod','Truncated');
 pskMod = comm.PSKModulator('BitInput',true,'PhaseOffset',0);
-awgnChan = comm.AWGNChannel('NoiseMethod','Variance', 'Variance',noiseVar);
-appDecoder = comm.APPDecoder('TrellisStructure',poly2trellis(7,[171 133]), 'Algorithm','True APP','CodedBitLLROutputPort',false);
-pskDemod = comm.PSKDemodulator('BitOutput',true,'PhaseOffset',0, 'DecisionMethod','Approximate log-likelihood ratio', 'Variance',noiseVar);
+appDecoder1 = comm.APPDecoder('TrellisStructure',poly2trellis(7,[171 133]), 'Algorithm','True APP','CodedBitLLROutputPort',false);
+appDecoder2 = comm.APPDecoder('TrellisStructure',poly2trellis(7,[171 133]), 'Algorithm','True APP','CodedBitLLROutputPort',false);
 
-% Новый демодулятор для 8PSK
-pskDemod8PSK = @(receivedSignal) demap8PSK_Rmatrix(receivedSignal, noiseVar);
-
-% Инициализация объекта для подсчета ошибок
+% Initialize error rate objects
 errRate = comm.ErrorRate;
+errRateSimp = comm.ErrorRate;
 
-for counter = 1:5
-    % Генерация данных
-    data = randi([0 1],frameLength,1);
-    encodedData = convEncoder(data);
-    modSignal = pskMod(encodedData);
-    receivedSignal = awgnChan(modSignal);
+% Number of iterations
+%numIterations = 1000;
+
+ber1 = zeros(1,length(noiseVar));
+ber2 = zeros(1,length(noiseVar));
+
+for k = 1:length(noiseVar)
+    % numFrames = 100;
+    errorStats = zeros(1,3);
+    errorStatsSimp = zeros(1,3);
     
-    % Демодуляция с использованием существующего демодулятора
-    demodSignal = pskDemod(receivedSignal);
-    receivedSoftBits = appDecoder(zeros(frameLength,1),-demodSignal);
-    receivedBits = double(receivedSoftBits > 0);
-    errorStats = errRate(data,receivedBits);
-    
-    % Демодуляция с использованием нового демодулятора
-    demodSignal8PSK = pskDemod8PSK(receivedSignal);
-    receivedSoftBits8PSK = appDecoder(zeros(frameLength,1),-demodSignal8PSK);
-    receivedBits8PSK = double(receivedSoftBits8PSK > 0);
-    errorStats8PSK = errRate(data,receivedBits8PSK);
+    while errorStats(2) < 1000 && errorStats(3) < 1e7 
+        % Generate data
+        data = randi([0 1], frameLength, 1);
+        encodedData = convEncoder(data);
+        modSignal = pskMod(encodedData);
+        awgnChan = comm.AWGNChannel('NoiseMethod','Variance', 'Variance',noiseVar(k));
+        receivedSignal = awgnChan(modSignal);
+        % Demodulation using the existing demodulator
+        pskDemod = comm.PSKDemodulator('BitOutput',true,'PhaseOffset',pi/8, 'DecisionMethod','Approximate log-likelihood ratio', 'Variance',noiseVar(k));
+        demodSignal = pskDemod(receivedSignal);
+        receivedSoftBits = appDecoder1(zeros(frameLength, 1), -demodSignal);
+        receivedBits = double(receivedSoftBits > 0);
+        errorStats = errRate(data, receivedBits);
+        % Demodulation using the new 8PSK demodulator
+        demodSignal8PSK = demap8PSK_Rmatrix(receivedSignal, noiseVar(k));
+        receivedSoftBits8PSK = appDecoder2(zeros(frameLength, 1), demodSignal8PSK);
+        receivedBits8PSK = double(receivedSoftBits8PSK > 0);
+        errorStatsSimp = errRateSimp(data, receivedBits8PSK);
+    end
+    % Save the BER data and reset the bit error rate object
+    ber1(k) = errorStats(1);
+    ber2(k) = errorStatsSimp(1);
+    reset(errRate);
+    reset(errRateSimp);
 end
 
-% Вывод результатов
-fprintf('Error rate (existing) = %f\nNumber of errors (existing) = %d\n', errorStats(1), errorStats(2));
-fprintf('Error rate (8PSK) = %f\nNumber of errors (8PSK) = %d\n', errorStats8PSK(1), errorStats8PSK(2));
-fprintf('__________\n')
+figure
+semilogy(noiseVar,ber1,'-o',noiseVar,ber2,"-diamond")
+grid
+xlabel('noiseVar')
+ylabel('Bit Error Rate')
+legend('8PSK','Simp8PSK')
