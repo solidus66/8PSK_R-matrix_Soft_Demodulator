@@ -20,8 +20,6 @@
 * [**comm_app.m**](comm_app.m) - измененный пример из документации [comm.APPDecoder](https://www.mathworks.com/help/comm/ref/comm.appdecoder-system-object.html) и [comm.PSKDemodulator](https://www.mathworks.com/help/comm/ref/comm.pskdemodulator-system-object.html) из MatLab (добавлено использование собственного демодулятора)
 * [**comm_app_01.m**](comm_app_01.m) - измененный пример из документации [comm.APPDecoder](https://www.mathworks.com/help/comm/ref/comm.appdecoder-system-object.html) и [comm.PSKDemodulator](https://www.mathworks.com/help/comm/ref/comm.pskdemodulator-system-object.html) из MatLab, в данный файл добавлены также вышеперечисленные функции из *основных файлов*, чтобы он мог работать самостоятельно
 
-Файлы [**comm_app.m**](comm_app.m) и [**comm_app_01.m**](comm_app_01.m) (в будующем будут переименованы) представляют собой
-
 #### Немного теории:
 
 LLR, или логарифмическое отношение правдоподобия (Log-Likelihood Ratio), является ключевым показателем в демодуляции и декодировании цифровых сигналов, особенно в системах с мягким принятием решений. LLR предоставляет меру того, насколько вероятно, что определённый бит равен 1, а не 0, на основе принятого сигнала и шума в канале.
