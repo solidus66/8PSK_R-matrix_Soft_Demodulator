@@ -1,106 +1,116 @@
 clear;
-% параметры
-% noiseVar = 2e-1;
-noiseVar = (0.025:0.025:0.5); % Диапазон значений дисперсии шума (σ²)
-frameLength = 300;
+% Параметры
+bps = 3;  % Количество бит на символ для 8PSK
+EbN0_dB = (0:0.5:10);  % Значения Eb/N0 в дБ
+frameLength = 300;  % Длина кадра
 
 % Создание объектов
-convEncoder = comm.ConvolutionalEncoder('TrellisStructure',poly2trellis(7,[171 133]),'TerminationMethod','Truncated');
-pskMod = comm.PSKModulator('BitInput',true,'PhaseOffset',0);
-appDecoder1 = comm.APPDecoder('TrellisStructure',poly2trellis(7,[171 133]), 'Algorithm','True APP','CodedBitLLROutputPort',false);
-appDecoder2 = comm.APPDecoder('TrellisStructure',poly2trellis(7,[171 133]), 'Algorithm','True APP','CodedBitLLROutputPort',false);
+convEncoder = comm.ConvolutionalEncoder('TrellisStructure',poly2trellis(7,[171 133]),'TerminationMethod','Truncated'); % Создание свёрточного кодера
+pskMod = comm.PSKModulator('BitInput',true,'PhaseOffset',0, 'ModulationOrder', 8); % Создание PSK модулятора
+appDecoder1 = comm.APPDecoder('TrellisStructure',poly2trellis(7,[171 133]), 'Algorithm','True APP','CodedBitLLROutputPort',false); % Создание декодера APP
+appDecoder2 = comm.APPDecoder('TrellisStructure',poly2trellis(7,[171 133]), 'Algorithm','True APP','CodedBitLLROutputPort',false); % Создание второго декодера APP
 
-% Инициализация объектов для оценки ошибок
-errRate = comm.ErrorRate;
-errRateSimp = comm.ErrorRate;
+% Инициализация объектов для подсчета ошибок
+errRate = comm.ErrorRate; % Объект для подсчета ошибок
+errRateSimp = comm.ErrorRate; % Второй объект для подсчета ошибок
 
-ber1 = zeros(1,length(noiseVar)); % Вектор для хранения BER PSKDemodulator
-ber2 = zeros(1,length(noiseVar)); % Вектор для хранения BER Simp8PSK (demap8PSK_Rmatrix)
-EbNo = zeros(1,length(noiseVar)); % Вектор для хранения значений Eb/No
+% Предварительное выделение массивов BER
+ber1 = zeros(1,length(EbN0_dB));   % Вектор для хранения BER PSKDemodulator
+ber2 = zeros(1,length(EbN0_dB));   % Вектор для хранения BER Simp8PSK (demap8PSK_Rmatrix)
 
-for k = 1:length(noiseVar)
-    errorStats = zeros(1,3);
-    errorStatsSimp = zeros(1,3);
+for k_idx = 1:length(EbN0_dB)
+    rate = 1/2;  % Кодовая скорость для текущего пакета
+    EsNo = EbN0_dB(k_idx) + 10*log10(bps);  % Преобразование Eb/N0 в Es/N0
+    snrdB = EsNo + 10*log10(rate);  % Отношение сигнал/шум в дБ
+    noiseVar = 1./(10.^(snrdB/10));  % Дисперсия шума
 
-    % Расчет Eb/No
-    EbNo(k) = 1 / (2 * noiseVar(k));
+    % Инициализация статистики ошибок
+    errorStats = zeros(1,3);  % Статистика ошибок для PSKDemodulator
+    errorStatsSimp = zeros(1,3);  % Статистика ошибок для Simp8PSK (demap8PSK_Rmatrix)
 
-    while errorStats(2) < 1000 && errorStats(3) < 1e7
+    % Цикл для подсчета ошибок
+    while errorStats(2) < 2000 && errorStats(3) < 1e7 && errorStatsSimp(2) < 2000 && errorStatsSimp(3) < 1e7
         % Генерация данных
         data = randi([0 1], frameLength, 1);
         encodedData = convEncoder(data);
         modSignal = pskMod(encodedData);
-        awgnChan = comm.AWGNChannel('NoiseMethod','Variance', 'Variance',noiseVar(k));
+        awgnChan = comm.AWGNChannel('NoiseMethod','Variance', 'Variance',noiseVar);
         receivedSignal = awgnChan(modSignal);
 
         % Демодуляция с использованием PSKDemodulator
-        pskDemod = comm.PSKDemodulator('BitOutput',true,'PhaseOffset',pi/8, 'DecisionMethod','Approximate log-likelihood ratio', 'Variance',noiseVar(k));
+        pskDemod = comm.PSKDemodulator('BitOutput',true,'PhaseOffset',pi/8, 'DecisionMethod','Approximate log-likelihood ratio', 'Variance',noiseVar);
         demodSignal = pskDemod(receivedSignal);
         receivedSoftBits = appDecoder1(zeros(frameLength, 1), -demodSignal);
         receivedBits = double(receivedSoftBits > 0);
         errorStats = errRate(data, receivedBits);
 
         % Демодуляция с использованием demap8PSK_Rmatrix
-        demodSignal8PSK = demap8PSK_Rmatrix(receivedSignal, noiseVar(k));
+        demodSignal8PSK = demap8PSK_Rmatrix(receivedSignal, noiseVar);
         receivedSoftBits8PSK = appDecoder2(zeros(frameLength, 1), demodSignal8PSK);
         receivedBits8PSK = double(receivedSoftBits8PSK > 0);
         errorStatsSimp = errRateSimp(data, receivedBits8PSK);
     end
-    % Сохранение данных BER и сброс объекта для оценки ошибок
-    ber1(k) = errorStats(1);
-    ber2(k) = errorStatsSimp(1);
-    reset(errRate);
-    reset(errRateSimp);
+
+    % Сохранение данных BER и сброс объектов подсчета ошибок
+    ber1(k_idx) = errorStats(1);  % Сохранение BER для PSKDemodulator
+    ber2(k_idx) = errorStatsSimp(1);  % Сохранение BER для Simp8PSK (demap8PSK_Rmatrix)
+    reset(errRate);  % Сброс объекта подсчета ошибок
+    reset(errRateSimp);  % Сброс второго объекта подсчета ошибок
+
+    fprintf('Выполнение: %.2f%%\n', (k_idx / length(EbN0_dB)) * 100);
 end
 
+% Построение графика BER
 figure
-semilogy(10*log10(EbNo),ber1,'-o',10*log10(EbNo),ber2,"-diamond") % Построение графика BER в зависимости от Eb/No (в дБ)
-grid
-xlabel('Eb/No (dB)')
-ylabel('Bit Error Rate')
-legend('PSKDemodulator','demap8PSK_Rmatrix')
+semilogy(EbN0_dB,ber1,'-o',EbN0_dB,ber2,"-diamond");
+grid;
+xlabel('E_b/N_0 (dB)');  % Подпись оси X
+ylabel('Bit Error Rate');  % Подпись оси Y
+legend('PSKDemodulator','demap8PSK_Rmatrix');
 
-function LLRs = demap8PSK_Rmatrix(sig, sigma2) % sig - это комплексный вектор символов
-% инициализация массива LLR значений
-LLRs = zeros(1, length(sig)*3);
+% Функция для демодуляции 8PSK сигнала и вычисления LLR значений
+function LLRs = demap8PSK_Rmatrix(sig, sigma2)
+LLRs = zeros(1, length(sig)*3);  % Инициализация массива LLR значений
 
-% проходим по каждому символу и вычисляем LLR значения
+% Проходим по каждому символу и вычисляем LLR значения
 for k=0:(length(sig) - 1)
     yI = real(sig(k+1));
     yQ = imag(sig(k+1));
 
-    % вычисляем фазовый угол принятого символа
+    % Вычисляем фазовый угол принятого символа
     phaseAngle = atan2(yQ, yI);
 
-    % определяем область на основе фазового угла
+    % Определяем область на основе фазового угла
     region = determineRegion(phaseAngle);
 
-    % получаем R-матрицу для определенной области
+    % Получаем R-матрицу для определенной области
     R = getRMatrix(region);
 
-    % вычисляем LLR значения для текущего символа
+    % Вычисляем LLR значения для текущего символа
     LLRs(3*k+1) = yI * (1/sigma2) * R(1,1) + yQ * (1/sigma2) * R(2,1);
     LLRs(3*k+2) = yI * (1/sigma2) * R(1,2) + yQ * (1/sigma2) * R(2,2);
     LLRs(3*k+3) = yI * (1/sigma2) * R(1,3) + yQ * (1/sigma2) * R(2,3);
 end
 
-LLRs = reshape(LLRs, [], 1);
+LLRs = reshape(LLRs, [], 1);  % Преобразование массива LLR значений в вектор
 end
 
+% Функция для определения области фазового угла
 function region = determineRegion(phaseAngle)
-% нормализация угла фазы в диапазон [-pi, pi)
+% Нормализация угла фазы в диапазон [-pi, pi)
 phaseAngle = mod(phaseAngle + pi, 2*pi) - pi;
 
-% определение границ для всех восьми областей
+% Определение границ для всех восьми областей
 region_bounds = [-pi, -3*pi/4, -pi/2, -pi/4, 0, pi/4, pi/2, 3*pi/4];
 
-% определение области фазового угла
+% Определение области фазового угла
 region = find(phaseAngle >= region_bounds, 1, 'last');
 if isempty(region)
     region = 1;
 end
 end
 
+% Функция для получения R-матрицы для определенной области
 function R = getRMatrix(region)
 angles_b0 = [
     -7*pi/8, 7*pi/8;  % область i
