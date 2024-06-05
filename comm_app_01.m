@@ -18,8 +18,10 @@ errRateSimp = comm.ErrorRate; % Второй объект для подсчет�
 ber1 = zeros(1,length(EbN0_dB));   % Вектор для хранения BER PSKDemodulator
 ber2 = zeros(1,length(EbN0_dB));   % Вектор для хранения BER Simp8PSK (demap8PSK_Rmatrix)
 
+tic;
+
 for k_idx = 1:length(EbN0_dB)
-    rate = 1/2;  
+    rate = 1/2;
     EsNo = EbN0_dB(k_idx) + 10*log10(bps);  % Преобразование Eb/N0 в Es/N0
     snrdB = EsNo + 10*log10(rate);  % Отношение сигнал/шум в дБ
     noiseVar = 1./(10.^(snrdB/10));  % Дисперсия шума
@@ -29,7 +31,7 @@ for k_idx = 1:length(EbN0_dB)
     errorStatsSimp = zeros(1,3);  % Статистика ошибок для Simp8PSK (demap8PSK_Rmatrix)
 
     % Цикл для подсчета ошибок
-    while errorStats(2) < 2000 && errorStats(3) < 1e7
+    while errorStats(2) < 1e5 && errorStats(3) < 1e8
         % Генерация данных
         data = randi([0 1], frameLength, 1);
         encodedData = convEncoder(data);
@@ -59,6 +61,10 @@ for k_idx = 1:length(EbN0_dB)
 
     fprintf('Выполнение: %.2f%%\n', (k_idx / length(EbN0_dB)) * 100);
 end
+
+elapsedTime = toc;
+fprintf('Время выполнения программы в секундах: %.2f \n', elapsedTime);
+fprintf('Время выполнения программы в минутах: %.2f \n', elapsedTime/60);
 
 % Построение графика BER
 figure
