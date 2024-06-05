@@ -26,4 +26,6 @@ LLR, или логарифмическое отношение правдопод
 
 #### Результат моделирования:
 
-![fig_error-1e5, total-1e8](figures/fig_error-1e5, total-1e8.png)
+Кривые BER в зависимости от отношения Eb/N0. Количество ошибок 1e5, количесвто экспериментов 1e8.
+
+![fig_error-1e5, total-1e8](https://github.com/solidus66/8PSK_R-matrix_Soft_Demodulator/assets/59517205/99f354ac-1e92-43d6-bc62-0e404cee66de)
