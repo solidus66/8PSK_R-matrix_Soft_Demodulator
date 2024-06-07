@@ -15,10 +15,10 @@
 
 ##### Моделирование:
 
-Для оценки работоспособности реализованного алгоритма мягкого фазового демодулятора для 8PSK, основанного на методе R-матриц, было проведено моделирование и сравнение с существующим демодулятором comm.PSKDemodulator из библиотеки MATLAB.
+Для оценки работоспособности реализованного алгоритма мягкого фазового демодулятора для 8PSK, основанного на методе R-матриц, было проведено моделирование и сравнение с существующими демодуляторами из библиотеки [comm.PSKDemodulator](https://www.mathworks.com/help/comm/ref/comm.pskdemodulator-system-object.html) в MATLAB.
 
-* [**comm_app.m**](comm_app.m) - измененный пример из документации [comm.APPDecoder](https://www.mathworks.com/help/comm/ref/comm.appdecoder-system-object.html) и [comm.PSKDemodulator](https://www.mathworks.com/help/comm/ref/comm.pskdemodulator-system-object.html) из MatLab (добавлено использование собственного демодулятора)
-* [**comm_app_01.m**](comm_app_01.m) - измененный пример из документации [comm.APPDecoder](https://www.mathworks.com/help/comm/ref/comm.appdecoder-system-object.html) и [comm.PSKDemodulator](https://www.mathworks.com/help/comm/ref/comm.pskdemodulator-system-object.html) из MatLab, в данный файл добавлены также вышеперечисленные функции из *основных файлов*, чтобы он мог работать самостоятельно
+* [**comm_app.m**](comm_app.m) - файл предназначен для моделирования и оценки работоспособности реализованного алгоритма. Проводится моделирование системы связи с тремя разными демодуляторами: comm.PSKDemodulator Log-likelihood ratio, comm.PSKDemodulator Approximate log-likelihood ratio и реализованным демодулятором demap8PSK_Rmatrix для их сравнения.
+* [**comm_app_01.m**](comm_app_01.m) - тот же [**comm_app.m**](), но в данную версию файла интегрированы вышеперечисленные функции из *основных файлов*, чтобы он мог работать самостоятельно
 
 #### Немного теории:
 
@@ -28,4 +28,4 @@ LLR, или логарифмическое отношение правдопод
 
 Кривые BER в зависимости от отношения Eb/N0. Количество ошибок 1e5, количесвто экспериментов 1e8.
 
-![fig_error-1e5, total-1e8](https://github.com/solidus66/8PSK_R-matrix_Soft_Demodulator/assets/59517205/99f354ac-1e92-43d6-bc62-0e404cee66de)
+![fig_error-1e5, total-1e8](https://github.com/solidus66/8PSK_R-matrix_Soft_Demodulator/assets/59517205/4e252585-bea6-4773-b45f-26aa5435cc66)
