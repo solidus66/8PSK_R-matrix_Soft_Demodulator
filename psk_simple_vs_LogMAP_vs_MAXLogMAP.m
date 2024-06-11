@@ -1,41 +1,41 @@
 clear;
 % Параметры
 bps = 3;  % Количество бит на символ для 8PSK
-EbN0_dB = (0:0.5:10);  % Значения Eb/N0 в дБ
+EbNo = (-4:1:10);  % Значения Eb/N0 в дБ
 frameLength = 300;  % Длина кадра
 
 % Создание объектов
 convEncoder = comm.ConvolutionalEncoder('TrellisStructure', poly2trellis(7, [171 133]), 'TerminationMethod', 'Truncated');  % Создание свёрточного кодера
-pskMod = comm.PSKModulator('BitInput', true, 'PhaseOffset', 0, 'ModulationOrder', 8);  % Создание PSK модулятора
+pskMod = comm.PSKModulator('BitInput', true);  % Создание PSK модулятора
 appDecoderLLR = comm.APPDecoder('TrellisStructure', poly2trellis(7, [171 133]), 'Algorithm', 'True APP', 'CodedBitLLROutputPort', false);  % Создание декодера APP для Log-likelihood ratio
 appDecoderApproxLLR = comm.APPDecoder('TrellisStructure', poly2trellis(7, [171 133]), 'Algorithm', 'True APP', 'CodedBitLLROutputPort', false);  % Создание декодера APP для Approximate log-likelihood ratio
 appDecoder8PSK = comm.APPDecoder('TrellisStructure', poly2trellis(7, [171 133]), 'Algorithm', 'True APP', 'CodedBitLLROutputPort', false);  % Создание декодера APP декодера для demap8PSK_Rmatrix
 
 % Инициализация объектов для подсчета ошибок
-errorRateLLR = comm.ErrorRate;  % Объект для подсчета ошибок (Log-likelihood ratio)
-errorRateApproxLLR = comm.ErrorRate;  % Объект для подсчета ошибок (Approximate log-likelihood ratio)
-errorRate8PSK = comm.ErrorRate;  % Объект для подсчета ошибок (demap8PSK_Rmatrix)
+errorRateLLR = comm.ErrorRate;
+errorRateApproxLLR = comm.ErrorRate;
+errorRate8PSK = comm.ErrorRate;
 
 % Предварительное выделение массивов BER
-berLLR = zeros(1, length(EbN0_dB));  % Вектор для хранения BER (Log-likelihood ratio)
-berApproxLLR = zeros(1, length(EbN0_dB));  % Вектор для хранения BER (Approximate log-likelihood ratio)
-ber8PSK = zeros(1, length(EbN0_dB));  % Вектор для хранения BER (demap8PSK_Rmatrix)
+berLLR = zeros(1, length(EbNo));
+berApproxLLR = zeros(1, length(EbNo));
+ber8PSK = zeros(1, length(EbNo));
 
 tic;
 
-for k_idx = 1:length(EbN0_dB)
-    rate = 1/2;
-    EsNo = EbN0_dB(k_idx) + 10*log10(bps);  % Преобразование Eb/N0 в Es/N0
-    snr_dB = EsNo + 10*log10(rate);  % Отношение сигнал/шум в дБ
-    noiseVar = 1./(10.^(snr_dB/10));  % Дисперсия шума
+for k = 1:length(EbNo)
+    rate = 0.5;
+    EsNo = EbNo(k) + 10*log10(bps);  % Преобразование Eb/N0 в Es/N0
+    snrdB = EsNo + 10*log10(rate);  % Отношение сигнал/шум в дБ
+    noiseVar = 1./(10.^(snrdB/10));  % Дисперсия шума
 
     % Инициализация статистики ошибок
-    errorStatsLLR = zeros(1, 3);  % Статистика ошибок для Log-likelihood ratio
-    errorStatsApproxLLR = zeros(1, 3);  % Статистика ошибок для Approximate log-likelihood ratio
-    errorStats8PSK = zeros(1, 3);  % Статистика ошибок для demap8PSK_Rmatrix
+    errorStatsLLR = zeros(1, 3);
+    errorStatsApproxLLR = zeros(1, 3);
+    errorStats8PSK = zeros(1, 3);
 
     % Цикл для подсчета ошибок
-    while errorStatsLLR(2) < 1e5 && errorStatsLLR(3) < 1e8
+    while errorStatsLLR(2) < 1e4 && errorStatsLLR(3) < 1e7
         % Генерация данных
         data = randi([0 1], frameLength, 1);
         encodedData = convEncoder(data);
@@ -65,15 +65,15 @@ for k_idx = 1:length(EbN0_dB)
     end
 
     % Сохранение данных BER и сброс объектов подсчета ошибок
-    berLLR(k_idx) = errorStatsLLR(1);  % Сохранение BER для Log-likelihood ratio
-    berApproxLLR(k_idx) = errorStatsApproxLLR(1);  % Сохранение BER для Approximate log-likelihood ratio
-    ber8PSK(k_idx) = errorStats8PSK(1);  % Сохранение BER для demap8PSK_Rmatrix
+    berLLR(k) = errorStatsLLR(1);
+    berApproxLLR(k) = errorStatsApproxLLR(1);
+    ber8PSK(k) = errorStats8PSK(1);
 
-    reset(errorRateLLR);  % Сброс объекта подсчета ошибок
-    reset(errorRateApproxLLR);  % Сброс объекта подсчета ошибок
-    reset(errorRate8PSK);  % Сброс объекта подсчета ошибок
+    reset(errorRateLLR);
+    reset(errorRateApproxLLR);
+    reset(errorRate8PSK);
 
-    fprintf('Выполнение: %.2f%%\n', (k_idx / length(EbN0_dB)) * 100);
+    fprintf('Выполнение: %.2f%%\n', (k / length(EbNo)) * 100);
 end
 
 elapsedTime = toc;
@@ -82,11 +82,11 @@ fprintf('Время выполнения программы в минутах: %
 
 % Построение графика BER
 figure;
-semilogy(EbN0_dB, berLLR, '-o', EbN0_dB, berApproxLLR, '-square', EbN0_dB, ber8PSK, '-diamond');
+semilogy(EbNo, berLLR, '-o', EbNo, berApproxLLR, '-square', EbNo, ber8PSK, '-diamond');
 grid;
-xlabel('E_b/N_0 (dB)');  % Подпись оси X
+xlabel('Eb/No (dB)');  % Подпись оси X
 ylabel('Bit Error Rate');  % Подпись оси Y
-legend('Log-MAP (LLR)', 'Max-Log-MAP (Approximate LLR)', 'demap8PSK_Rmatrix');
+legend('Log-MAP (LLR)', 'MAX-Log-MAP (Approximate LLR)', 'demap8PSK_Rmatrix');
 
 % Функция для демодуляции 8PSK сигнала и вычисления LLR значений
 function LLRs = demap8PSK_Rmatrix(sig, sigma2)
